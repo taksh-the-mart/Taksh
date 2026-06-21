@@ -96,6 +96,35 @@
   .nav-links a{ text-decoration:none; transition:color .2s; position:relative;}
   .nav-links a:hover{ color:var(--gold-soft); }
   .nav-actions{ display:flex; align-items:center; gap:14px; }
+
+  /* ----- complaint dropdown ----- */
+  .complaint-wrap{ position:relative; }
+  .complaint-menu{
+    position:absolute; top:calc(100% + 12px); right:0; width:240px;
+    background: rgba(20,17,27,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid var(--glass-border); border-radius: var(--r-md); box-shadow: var(--glass-shadow);
+    padding:8px; z-index:60;
+    opacity:0; transform: translateY(-8px) scale(0.97); pointer-events:none;
+    transition: opacity .2s var(--ease), transform .2s var(--ease);
+  }
+  .complaint-menu::before{
+    content:""; position:absolute; top:-6px; right:16px; width:12px; height:12px;
+    background: rgba(20,17,27,0.85); border-left:1px solid var(--glass-border); border-top:1px solid var(--glass-border);
+    transform: rotate(45deg);
+  }
+  .complaint-wrap.open .complaint-menu,
+  .complaint-wrap:hover .complaint-menu{
+    opacity:1; transform: translateY(0) scale(1); pointer-events:auto;
+  }
+  .complaint-menu a{
+    display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:10px;
+    text-decoration:none; color:var(--ink-1); font-size:0.86rem; font-weight:600; transition: background .18s, color .18s;
+  }
+  .complaint-menu a:hover{ background: rgba(255,255,255,0.08); color:var(--gold-soft); }
+  .complaint-menu a svg{ width:17px; height:17px; flex-shrink:0; color:var(--gold-soft); }
+  .complaint-menu-label{
+    padding:9px 12px 6px; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2);
+  }
   .icon-btn{
     position:relative; width:42px; height:42px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
@@ -243,7 +272,31 @@
 
   .card-body{ padding:20px 20px 22px; display:flex; flex-direction:column; gap:10px; flex:1; }
   .card-body h3{ font-family:'Fraunces', serif; font-weight:500; font-size:1.18rem; margin:0; line-height:1.3;}
-  .card-body p.desc{ font-size:0.86rem; color:var(--ink-2); line-height:1.55; margin:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .card-body p.desc{ font-size:0.86rem; color:var(--ink-2); line-height:1.55; margin:0; }
+  .card-body p.desc.clamped{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .view-more-btn{
+    align-self:flex-start; background:none; border:none; padding:0; margin-top:-4px;
+    font-size:0.78rem; font-weight:700; color:var(--gold-soft); cursor:pointer;
+    text-decoration:underline; text-underline-offset:3px; transition:color .2s;
+  }
+  .view-more-btn:hover{ color:var(--gold); }
+
+  /* ----- size selector: rounded pills matching site shape language ----- */
+  .size-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:2px 0 0; }
+  .size-row .size-label{ font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-2); margin-right:2px; }
+  .size-pill{
+    min-width:34px; height:30px; padding:0 9px;
+    border-radius: var(--r-sm); border:1px solid var(--glass-border);
+    background: var(--glass-bg); color:var(--ink-1);
+    font-size:0.74rem; font-weight:700; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition: all .2s var(--ease);
+  }
+  .size-pill:hover{ border-color: rgba(201,168,106,.5); color:var(--ink-0); }
+  .size-pill.active{
+    background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+    color:#1c1610; border-color:transparent; box-shadow:0 4px 14px -4px rgba(201,168,106,.5);
+  }
   .card-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:10px;}
   .price{ font-family:'Fraunces', serif; font-size:1.25rem; color:var(--gold-soft); font-weight:600;}
   .price small{ font-size:0.7rem; color:var(--ink-2); font-family:'Manrope'; font-weight:500; margin-left:4px;}
@@ -437,13 +490,42 @@
 <!-- ============================= NAV ============================= -->
 <header class="nav">
   <div class="nav-inner">
-    <div class="brand"><span class="dot"></span> LUMÉ</div>
+    <div class="brand"><span class="dot"></span> TAKSH</div>
     <nav class="nav-links">
       <a href="#shop">Shop</a>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
     </nav>
     <div class="nav-actions">
+      <div class="complaint-wrap" id="complaintWrap">
+        <button class="icon-btn" id="complaintBtn" aria-label="Complaint / Help options" aria-haspopup="true">
+          <i data-lucide="headset"></i>
+        </button>
+        <div class="complaint-menu" id="complaintMenu" role="menu">
+          <div class="complaint-menu-label">Need Help? Reach Us</div>
+
+          <!-- ⚠️ PASTE YOUR COMPLAINT GMAIL BELOW -->
+          <a href="mailto:YOUR_COMPLAINT_EMAIL@gmail.com" target="_blank" rel="noopener">
+            <i data-lucide="mail"></i> Email Complaint
+          </a>
+
+          <!-- ⚠️ PASTE YOUR COMPLAINT WHATSAPP NUMBER BELOW (country code, no + or spaces) -->
+          <a href="https://wa.me/923XXXXXXXXX" target="_blank" rel="noopener">
+            <i data-lucide="message-circle"></i> WhatsApp Complaint
+          </a>
+
+          <!-- ⚠️ PASTE YOUR COMPLAINT SMS NUMBER BELOW -->
+          <a href="sms:+923XXXXXXXXX">
+            <i data-lucide="message-square"></i> SMS Complaint
+          </a>
+
+          <!-- ⚠️ PASTE YOUR COMPLAINT CALL NUMBER BELOW -->
+          <a href="tel:+923XXXXXXXXX">
+            <i data-lucide="phone"></i> Call Us
+          </a>
+        </div>
+      </div>
+
       <button class="icon-btn" id="cartOpenBtn" aria-label="Open cart">
         <i data-lucide="shopping-bag"></i>
         <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
@@ -489,7 +571,7 @@
   <div class="wrap">
     <div class="glass" style="padding:48px 40px; display:flex; gap:40px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
       <div style="max-width:520px;">
-        <div class="section-eyebrow">Why Lumé</div>
+        <div class="section-eyebrow">Why Taksh</div>
         <h2 style="font-family:'Fraunces',serif; font-weight:450; font-size:1.8rem; margin:10px 0 14px;">Small batch. Honest pricing. Real people.</h2>
         <p style="color:var(--ink-2); line-height:1.7; margin:0; font-size:0.95rem;">We work directly with independent makers, cut out the middlemen, and pass the difference back to you. Order today, and our team personally calls to confirm every detail before it ships.</p>
       </div>
@@ -507,7 +589,7 @@
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <div class="brand"><span class="dot"></span> LUMÉ</div>
+        <div class="brand"><span class="dot"></span> TAKSH</div>
         <p>Curated essentials, delivered with care. Reach out any time — our team replies within minutes during business hours.</p>
       </div>
       <div class="footer-cols">
@@ -524,7 +606,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 Lumé. All rights reserved.</span>
+      <span>© 2026 Taksh. All rights reserved.</span>
       <span>Designed with care.</span>
     </div>
   </div>
@@ -547,6 +629,17 @@
   </div>
 
   <div class="drawer-foot">
+    <div class="total-row" id="subtotalRow" style="display:none;">
+      <span class="label" style="font-size:0.85rem;">Subtotal</span>
+      <span class="amt" id="subtotalAmt" style="font-size:1rem; color:var(--ink-1);">Rs. 0</span>
+    </div>
+    <div class="total-row" style="margin-bottom:8px;">
+      <span class="label" style="font-size:0.85rem;">Delivery Charges</span>
+      <span style="display:flex; align-items:center; gap:8px;">
+        <span id="deliveryChargeDisplay" style="font-size:0.85rem; color:var(--ink-2); text-decoration:line-through; text-decoration-color:rgba(202,160,168,.7);">Rs. 199</span>
+        <span style="font-size:0.78rem; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; color:#3ddc84;">Free</span>
+      </span>
+    </div>
     <div class="total-row">
       <span class="label">Grand Total</span>
       <span class="amt" id="grandTotal">Rs. 0</span>
@@ -585,7 +678,7 @@
       <!-- formsubmit.co control fields: zero-friction, no captcha, no redirect template -->
       <input type="hidden" name="_captcha" value="false">
       <input type="hidden" name="_template" value="table">
-      <input type="hidden" name="_subject" value="??? New Order Received — Lumé">
+      <input type="hidden" name="_subject" value="🛍️ New Order Received — Taksh">
 
       <div class="submit-row">
         <button type="submit" class="btn btn-primary" id="submitOrderBtn">
@@ -600,13 +693,13 @@
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal glass">
     <div class="modal-icon"><i data-lucide="check"></i></div>
-    <h3>Order Request Received! ??</h3>
+    <h3>Order Request Received! 🌟</h3>
     <p id="modalMessage">
       Shukriya <b id="modalCustName">Customer</b>, aap ka order request humein mil gaya hai.<br><br>
       <b>Agla Step kya hai?</b> Humari team member agle 10-15 minutes mein aap se aapke diye gaye WhatsApp number par contact karenge, taake aap ka order confirm karke delivery process shuru ki ja sake.
     </p>
     <div class="modal-actions">
-      <!-- ?? PASTE YOUR WHATSAPP NUMBER BELOW (with country code, no + or spaces) -->
+      <!-- ⚠️ PASTE YOUR WHATSAPP NUMBER BELOW (with country code, no + or spaces) -->
       <a href="https://wa.me/923484471224" target="_blank" rel="noopener" class="btn wa-btn">
         <i data-lucide="message-circle" style="width:18px;height:18px;"></i> Chat with us on WhatsApp
       </a>
@@ -629,6 +722,9 @@ const products = [
      dealEndsAt: "2026-06-30T23:59:59"  -> shows live countdown (Days:HH:MM:SS).
                                            When it reaches zero, badge auto-changes to "Deal Ended"
                                            and the product itself stays fully normal/buyable.
+     sizes: ["S","M","L","XL"]  -> shows a size-selector row under the description.
+                                    Leave this field OUT entirely for products that don't need
+                                    sizes (e.g. watch, sunglasses, scarf) and the row won't render.
      ---------------------------------------------------------------------- */
   {
     id: 1,
@@ -637,6 +733,7 @@ const products = [
     description: "The Nike, JUST DO IT.",
     badge: "new",                          // shows "New" pill
     dealEndsAt: "2026-06-30T23:59:59",      // countdown badge -> auto switches to "Deal Ended"
+    sizes: ["S","M","L","XL"],             // size selector shown — this is a shoe
     images: [
       "https://i.ibb.co/4g2b3Mj7/photo-1542291026-7eec264c27ff.jpg",
       "https://i.ibb.co/WNrngmtw/photo-1548801133-da353ebb1d97.jpg",
@@ -647,8 +744,9 @@ const products = [
     id: 2,
     name: "Atelier Wool Overcoat",
     price: 12900,
-    description: "A tailored double-breasted overcoat in heavyweight wool blend. Cut for a relaxed silhouette that layers beautifully over knitwear.",
+    description: "A tailored double-breasted overcoat in heavyweight wool blend. Cut for a relaxed silhouette that layers beautifully over knitwear. Designed in-house and finished by hand, this piece is built from a heavyweight Italian wool blend that holds its shape through years of wear. The notch lapel and horn buttons give it a timeless look that pairs equally well with denim or tailored trousers.",
     stockLeft: 4,                          // shows "Limited Stock — only 4 left"
+    sizes: ["S","M","L","XL"],             // size selector shown — this is a coat
     images: [
       "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?q=80&w=900&auto=format&fit=crop",
@@ -661,6 +759,7 @@ const products = [
     price: 6200,
     description: "A 38mm stainless steel watch with sapphire-coated glass and a hand-finished sunburst dial. Understated, all-day wearable.",
     outOfStock: true,                      // dims card, disables Add button, shows "Out of Stock"
+    // no "sizes" field here on purpose — watches don't need a size selector
     images: [
       "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1495856458515-0637185db551?q=80&w=900&auto=format&fit=crop",
@@ -672,6 +771,7 @@ const products = [
     name: "Cassia Silk Scarf",
     price: 3200,
     description: "100% mulberry silk scarf, hand-rolled edges, exclusive botanical print. Lightweight enough to wear three different ways.",
+    // no "sizes" field — scarf is one-size, so the row stays hidden
     images: [
       "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1601924921557-45e6dea0a157?q=80&w=900&auto=format&fit=crop",
@@ -683,6 +783,7 @@ const products = [
     name: "Driftwood Sunglasses",
     price: 4500,
     description: "Acetate frames with polarized UV400 lenses, finished in a warm tortoise tone. Comes with a recycled-felt travel pouch.",
+    // no "sizes" field — sunglasses don't need one either
     images: [
       "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1577803645773-f96470509666?q=80&w=900&auto=format&fit=crop",
@@ -694,6 +795,7 @@ const products = [
     name: "Harlow Suede Loafers",
     price: 7300,
     description: "Penny loafers in buttery suede with a hand-stacked leather heel. Built on a cushioned footbed for all-day comfort.",
+    sizes: ["S","M","L","XL"],             // size selector shown — this is a shoe
     images: [
       "https://images.unsplash.com/photo-1614252369475-531eba835eb1?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1533867617858-e7b97e060509?q=80&w=900&auto=format&fit=crop",
@@ -738,6 +840,22 @@ function renderProducts(){
     const slides = p.images.map(src => `<img src="${src}" alt="${p.name}" draggable="false">`).join('');
     const dots = p.images.map((_, i) => `<span class="${i===0?'active':''}" data-dot="${i}"></span>`).join('');
     const oosClass = p.outOfStock ? ' is-oos' : '';
+
+    // long description gets a clamp + "View More" toggle button
+    const isLong = p.description.length > 90;
+    const descClass = isLong ? 'desc clamped' : 'desc';
+    const viewMoreBtn = isLong
+      ? `<button class="view-more-btn" data-action="toggle-desc" data-id="${p.id}">View More</button>`
+      : '';
+
+    // size selector row — only renders if this product defines a "sizes" array
+    const sizeRow = (p.sizes && p.sizes.length)
+      ? `<div class="size-row" data-size-row="${p.id}">
+           <span class="size-label">Size:</span>
+           ${p.sizes.map((s,i) => `<button type="button" class="size-pill${i===0?' active':''}" data-action="size" data-id="${p.id}" data-size="${s}">${s}</button>`).join('')}
+         </div>`
+      : '';
+
     return `
     <article class="card glass${oosClass}" data-id="${p.id}">
       <div class="carousel" data-carousel="${p.id}">
@@ -751,7 +869,9 @@ function renderProducts(){
       </div>
       <div class="card-body">
         <h3>${p.name}</h3>
-        <p class="desc">${p.description}</p>
+        <p class="${descClass}" data-desc="${p.id}">${p.description}</p>
+        ${viewMoreBtn}
+        ${sizeRow}
         <div class="card-foot">
           <div class="price">Rs. ${p.price.toLocaleString()}<small>/ pc</small></div>
           <button class="add-btn" data-action="add" data-id="${p.id}" aria-label="Add ${p.name} to cart" ${p.outOfStock ? 'disabled' : ''}>
@@ -764,6 +884,9 @@ function renderProducts(){
   lucide.createIcons();
   updateCountdowns(); // paint timers immediately, no 1s flash of placeholder
 }
+
+// tracks the currently selected size per product id, e.g. { 1: "M", 6: "L" }
+let selectedSizes = {};
 
 /* ----- live countdown timers for dealEndsAt ----- */
 function updateCountdowns(){
@@ -797,6 +920,8 @@ productGrid.addEventListener('click', (e) => {
   const btn = e.target.closest('.car-btn');
   const addBtn = e.target.closest('.add-btn');
   const dot = e.target.closest('[data-dot]');
+  const viewMoreBtn = e.target.closest('[data-action="toggle-desc"]');
+  const sizeBtn = e.target.closest('[data-action="size"]');
 
   if(btn){
     const wrap = btn.closest('.carousel');
@@ -812,6 +937,18 @@ productGrid.addEventListener('click', (e) => {
     const wrap = dot.closest('.carousel');
     const id = wrap.dataset.carousel;
     setCarousel(id, parseInt(dot.dataset.dot));
+  }
+  if(viewMoreBtn){
+    const id = viewMoreBtn.dataset.id;
+    const descEl = document.querySelector(`[data-desc="${id}"]`);
+    const isClamped = descEl.classList.toggle('clamped');
+    viewMoreBtn.textContent = isClamped ? 'View More' : 'View Less';
+  }
+  if(sizeBtn){
+    const id = sizeBtn.dataset.id;
+    selectedSizes[id] = sizeBtn.dataset.size;
+    const row = document.querySelector(`[data-size-row="${id}"]`);
+    row.querySelectorAll('.size-pill').forEach(p => p.classList.toggle('active', p === sizeBtn));
   }
 });
 
@@ -857,6 +994,8 @@ productGrid.addEventListener('touchend', (e) => {
 const cartBody = document.getElementById('cartBody');
 const cartBadge = document.getElementById('cartBadge');
 const grandTotalEl = document.getElementById('grandTotal');
+const subtotalEl = document.getElementById('subtotalAmt');
+const subtotalRow = document.getElementById('subtotalRow');
 const drawer = document.getElementById('drawer');
 const overlay = document.getElementById('overlay');
 const checkoutForm = document.getElementById('checkoutForm');
@@ -867,31 +1006,48 @@ function addToCart(id){
     showToast("Out of Stock", `${product.name} is currently unavailable`, true);
     return;
   }
-  const existing = cart.find(item => item.id === id);
+
+  // if this product has sizes, require a selection (defaults to first size if user never touched it)
+  const size = (product.sizes && product.sizes.length) ? (selectedSizes[id] || product.sizes[0]) : null;
+
+  // items with different sizes are tracked as separate cart lines (key includes size)
+  const cartKey = size ? `${id}-${size}` : `${id}`;
+  const existing = cart.find(item => item.cartKey === cartKey);
+
   if(existing){
     existing.qty += 1;
   } else {
-    cart.push({ id: product.id, name: product.name, price: product.price, qty: 1, image: product.images[0] });
+    cart.push({ cartKey, id: product.id, name: product.name, price: product.price, qty: 1, image: product.images[0], size });
   }
   renderCart();
-  showToast(product.name, "Added to your cart");
+  showToast(product.name, size ? `Added to your cart · Size ${size}` : "Added to your cart");
   openDrawer();
 }
 
-function changeQty(id, delta){
-  const item = cart.find(i => i.id === id);
+function changeQty(cartKey, delta){
+  const item = cart.find(i => i.cartKey === cartKey);
   if(!item) return;
   item.qty += delta;
   if(item.qty <= 0){
-    cart = cart.filter(i => i.id !== id);
+    cart = cart.filter(i => i.cartKey !== cartKey);
   }
   renderCart();
 }
 
-function removeFromCart(id){
-  cart = cart.filter(i => i.id !== id);
+function removeFromCart(cartKey){
+  cart = cart.filter(i => i.cartKey !== cartKey);
   renderCart();
 }
+
+/* ----------------------------------------------------------------------
+   DELIVERY CHARGE CONFIG
+   Set the standard delivery fee here. It is shown struck-through with
+   "FREE" next to it on every order (zero-friction, always-free delivery
+   to make the customer feel like they're getting a deal).
+   To make delivery conditional instead (e.g. free above Rs.3000), wrap
+   the "FREE" logic below in an `if (subtotal >= 3000)` check.
+   ---------------------------------------------------------------------- */
+const DELIVERY_CHARGE = 199;
 
 function renderCart(){
   const count = cart.reduce((sum,i) => sum + i.qty, 0);
@@ -906,20 +1062,20 @@ function renderCart(){
       </div>`;
   } else {
     cartBody.innerHTML = cart.map(item => `
-      <div class="cart-item" data-id="${item.id}">
+      <div class="cart-item" data-key="${item.cartKey}">
         <img src="${item.image}" alt="${item.name}">
         <div class="cart-item-info">
-          <h5>${item.name}</h5>
+          <h5>${item.name}${item.size ? ` <span style="color:var(--gold-soft); font-weight:600;">· ${item.size}</span>` : ''}</h5>
           <span class="unit">Rs. ${item.price.toLocaleString()} each</span>
           <div class="qty-row">
             <div class="qty-ctrl">
-              <button data-action="dec" data-id="${item.id}" aria-label="Decrease quantity">-</button>
+              <button data-action="dec" data-key="${item.cartKey}" aria-label="Decrease quantity">-</button>
               <span>${item.qty}</span>
-              <button data-action="inc" data-id="${item.id}" aria-label="Increase quantity">+</button>
+              <button data-action="inc" data-key="${item.cartKey}" aria-label="Increase quantity">+</button>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="item-total">Rs. ${(item.price * item.qty).toLocaleString()}</span>
-              <button class="remove-btn" data-action="remove" data-id="${item.id}" aria-label="Remove item"><i data-lucide="trash-2"></i></button>
+              <button class="remove-btn" data-action="remove" data-key="${item.cartKey}" aria-label="Remove item"><i data-lucide="trash-2"></i></button>
             </div>
           </div>
         </div>
@@ -927,7 +1083,11 @@ function renderCart(){
     `).join('');
   }
 
-  const total = cart.reduce((sum,i) => sum + (i.price * i.qty), 0);
+  const subtotal = cart.reduce((sum,i) => sum + (i.price * i.qty), 0);
+  const total = subtotal; // delivery is free, so grand total = subtotal
+
+  subtotalRow.style.display = cart.length ? 'flex' : 'none';
+  subtotalEl.textContent = `Rs. ${subtotal.toLocaleString()}`;
   grandTotalEl.textContent = `Rs. ${total.toLocaleString()}`;
   lucide.createIcons();
 }
@@ -935,10 +1095,24 @@ function renderCart(){
 cartBody.addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-action]');
   if(!btn) return;
-  const id = parseInt(btn.dataset.id);
-  if(btn.dataset.action === 'inc') changeQty(id, 1);
-  if(btn.dataset.action === 'dec') changeQty(id, -1);
-  if(btn.dataset.action === 'remove') removeFromCart(id);
+  const key = btn.dataset.key;
+  if(btn.dataset.action === 'inc') changeQty(key, 1);
+  if(btn.dataset.action === 'dec') changeQty(key, -1);
+  if(btn.dataset.action === 'remove') removeFromCart(key);
+});
+
+/* ----- complaint dropdown (click toggle for mobile/touch; CSS :hover handles desktop) ----- */
+const complaintWrap = document.getElementById('complaintWrap');
+const complaintBtn = document.getElementById('complaintBtn');
+
+complaintBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  complaintWrap.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if(!complaintWrap.contains(e.target)){
+    complaintWrap.classList.remove('open');
+  }
 });
 
 /* ----- drawer open/close ----- */
@@ -1005,15 +1179,20 @@ const submitBtnText = document.getElementById('submitBtnText');
 function buildOrderSummary(){
   const lines = [];
   lines.push("———————————————————");
-  lines.push("        NEW ORDER — LUMÉ");
+  lines.push("        NEW ORDER — TAKSH");
   lines.push("———————————————————");
   lines.push("");
   cart.forEach((item, idx) => {
-    lines.push(`${idx + 1}. ${item.name}`);
+    const sizeText = item.size ? `  (Size: ${item.size})` : '';
+    lines.push(`${idx + 1}. ${item.name}${sizeText}`);
     lines.push(`   Qty: ${item.qty}  x  Rs. ${item.price.toLocaleString()}  =  Rs. ${(item.price * item.qty).toLocaleString()}`);
     lines.push("");
   });
-  const total = cart.reduce((sum,i) => sum + (i.price * i.qty), 0);
+  const subtotal = cart.reduce((sum,i) => sum + (i.price * i.qty), 0);
+  const total = subtotal; // delivery is free
+  lines.push("———————————————————");
+  lines.push(`Subtotal: Rs. ${subtotal.toLocaleString()}`);
+  lines.push(`Delivery Charges: Rs. ${DELIVERY_CHARGE} (FREE)`);
   lines.push("———————————————————");
   lines.push(`GRAND TOTAL: Rs. ${total.toLocaleString()}`);
   lines.push("———————————————————");
@@ -1040,7 +1219,7 @@ checkoutForm.addEventListener('submit', async (e) => {
   const custName = formData.get('Customer_Name');
 
   try {
-    /* ?? PASTE YOUR GMAIL ADDRESS BELOW — replace YOUR_EMAIL_PLACEHOLDER@GMAIL.COM */
+    /* ⚠️ PASTE YOUR GMAIL ADDRESS BELOW — replace YOUR_EMAIL_PLACEHOLDER@GMAIL.COM */
     const response = await fetch('https://formsubmit.co/ajax/shaniliaqat3@gmail.com', {
       method: 'POST',
       headers: { 'Accept': 'application/json' },
@@ -1088,6 +1267,7 @@ modalOverlay.addEventListener('click', (e) => {
 /* ======================================================================
    8. INIT
    ====================================================================== */
+document.getElementById('deliveryChargeDisplay').textContent = `Rs. ${DELIVERY_CHARGE}`;
 renderProducts();
 renderCart();
 lucide.createIcons();
