@@ -125,6 +125,63 @@
   .complaint-menu-label{
     padding:9px 12px 6px; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-2);
   }
+
+  /* ----- Shop nav dropdown (categories) — same elegant pattern as complaint dropdown ----- */
+  .shop-nav-wrap{ position:relative; }
+  .shop-nav-wrap > a{ cursor:pointer; display:flex; align-items:center; gap:5px; }
+  .shop-nav-wrap > a svg{ width:13px; height:13px; transition: transform .2s ease; }
+  .shop-nav-wrap:hover > a svg{ transform: rotate(180deg); }
+  .shop-dropdown{
+    position:absolute; top:calc(100% + 14px); left:50%; transform: translateX(-50%) translateY(-8px) scale(0.97);
+    width:220px;
+    background: rgba(20,17,27,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid var(--glass-border); border-radius: var(--r-md); box-shadow: var(--glass-shadow);
+    padding:8px; z-index:60;
+    opacity:0; pointer-events:none;
+    transition: opacity .2s var(--ease), transform .2s var(--ease);
+  }
+  .shop-dropdown::before{
+    content:""; position:absolute; top:-6px; left:50%; transform: translateX(-50%) rotate(45deg);
+    width:12px; height:12px; background: rgba(20,17,27,0.85);
+    border-left:1px solid var(--glass-border); border-top:1px solid var(--glass-border);
+  }
+  .shop-nav-wrap.open .shop-dropdown,
+  .shop-nav-wrap:hover .shop-dropdown{
+    opacity:1; transform: translateX(-50%) translateY(0) scale(1); pointer-events:auto;
+  }
+  .shop-dropdown a{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+    text-decoration:none; color:var(--ink-1); font-size:0.85rem; font-weight:600; transition: background .18s, color .18s;
+  }
+  .shop-dropdown a:hover{ background: rgba(255,255,255,0.08); color:var(--gold-soft); }
+  .shop-dropdown a svg{ width:15px; height:15px; flex-shrink:0; color:var(--gold-soft); }
+  .shop-dropdown a.active{ color:var(--gold-soft); background: rgba(201,168,106,.1); }
+
+  /* ----- category pill filter bar (sits above the product grid) ----- */
+  .category-bar{
+    display:flex; gap:10px; overflow-x:auto; padding:4px 2px 18px;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .category-bar::-webkit-scrollbar{ display:none; }
+  .category-pill{
+    flex-shrink:0; display:inline-flex; align-items:center; gap:7px;
+    padding:10px 18px; border-radius:999px;
+    background: var(--glass-bg); border:1px solid var(--glass-border);
+    color:var(--ink-1); font-size:0.84rem; font-weight:600; cursor:pointer;
+    transition: all .25s var(--ease); white-space:nowrap;
+  }
+  .category-pill svg{ width:14px; height:14px; }
+  .category-pill:hover{ border-color: rgba(201,168,106,.45); color:var(--ink-0); transform:translateY(-1px); }
+  .category-pill.active{
+    background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+    color:#1c1610; border-color:transparent; box-shadow:0 6px 18px -6px rgba(201,168,106,.5);
+  }
+
+  .empty-category{
+    text-align:center; padding:70px 20px; color:var(--ink-2);
+  }
+  .empty-category svg{ width:42px; height:42px; opacity:0.4; stroke:var(--gold-soft); margin-bottom:14px; }
+
   .icon-btn{
     position:relative; width:42px; height:42px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
@@ -552,9 +609,14 @@
 <!-- ============================= NAV ============================= -->
 <header class="nav">
   <div class="nav-inner">
-    <div class="brand"><span class="dot"></span> TAKSH</div>
+    <div class="brand" id="logoHomeLink" style="cursor:pointer;"><span class="dot"></span> TAKSH</div>
     <nav class="nav-links">
-      <a href="#shop">Shop</a>
+      <div class="shop-nav-wrap" id="shopNavWrap">
+        <a id="shopNavTrigger">Shop <i data-lucide="chevron-down"></i></a>
+        <div class="shop-dropdown" id="shopDropdown" role="menu">
+          <!-- category links injected by JS from the CATEGORIES list -->
+        </div>
+      </div>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
     </nav>
@@ -607,7 +669,7 @@
       <a href="#about" class="btn btn-ghost">Our Story</a>
     </div>
     <div class="hero-stats">
-      <div><b>4.9?</b><span>Customer Rating</span></div>
+      <div><b>4.9★</b><span>Customer Rating</span></div>
       <div><b>2,300+</b><span>Orders Delivered</span></div>
       <div><b>100%</b><span>COD Available</span></div>
     </div>
@@ -619,11 +681,15 @@
   <div class="wrap">
     <div class="section-head">
       <div>
-        <div class="section-eyebrow">The Collection</div>
-        <h2>Handpicked for you</h2>
+        <div class="section-eyebrow" id="shopEyebrow">The Collection</div>
+        <h2 id="shopHeading">Handpicked for you</h2>
       </div>
-      <p>Every piece below is in stock and ready to ship within 24 hours of order confirmation.</p>
+      <p id="shopSubtext">Every piece below is in stock and ready to ship within 24 hours of order confirmation.</p>
     </div>
+
+    <!-- category pills — clicking filters the grid below; also synced with the Shop nav dropdown -->
+    <div class="category-bar" id="categoryBar"><!-- pills injected by JS --></div>
+
     <div class="grid" id="productGrid"><!-- product cards injected by JS --></div>
   </div>
 </section>
@@ -799,6 +865,25 @@
 /* ======================================================================
    1. DYNAMIC DATA STRUCTURE — products array (edit/add items freely)
    ====================================================================== */
+/* ============================================================================
+   CATEGORIES — yahan se categories add/remove/rename hoti hain
+   Har category ek { } hai:
+     key   -> internal naam (kabhi mat badlein agar products mein use ho chuki ho)
+     label -> jo customer ko nazar aata hai
+     icon  -> Lucide icon ka naam (lucide.dev pe dekh sakte hain)
+   Naya category add karna ho to bas ek naya { } yahan likh dein, aur products
+   array mein us product ki "category" field mein wahi "key" likh dein.
+   ============================================================================ */
+const CATEGORIES = [
+  { key: "watches",  label: "Watches",  icon: "watch" },
+  { key: "jackets",  label: "Jackets",  icon: "shirt" },
+  { key: "pants",    label: "Pants",    icon: "shirt" },
+  { key: "glasses",  label: "Glasses",  icon: "glasses" },
+  { key: "medicine", label: "Medicine", icon: "pill" },
+  { key: "chains",   label: "Chains",   icon: "gem" },
+  { key: "fashion",  label: "Fashion",  icon: "sparkles" }
+];
+
 const products = [
   /* ----------------------------------------------------------------------
      === YEH PRODUCT KA "DATA CARD" HAI ===
@@ -854,6 +939,19 @@ const products = [
         -> "colors" list mein se jis color ka "name" yahan likh denge, woh
            color bhi halka/dull ho jayega aur click nahi hoga — yani woh
            color filhaal stock mein nahi hai (bilkul sizes wale tarike jaisa).
+
+     category: "watches"
+        -> Yeh product kis category mein dikhega. Upar wali CATEGORIES list
+           mein se koi bhi "key" yahan likhein (jaise "watches", "jackets",
+           "pants", "glasses", "medicine", "chains", "fashion"). Customer
+           jab Shop dropdown ya category pills se category select karega,
+           sirf usi category ke products dikhenge.
+
+     featured: true
+        -> Yeh product "Home" tab pe (default landing view) dikhega.
+           Sirf unhi products pe yeh likhein jo aap homepage pe sabse
+           pehle dikhana chahte hain — baqi sab "Home" pe nazar nahi
+           aayenge, sirf apni category select karne pe dikhenge.
      ---------------------------------------------------------------------- */
   {
     id: 1,
@@ -871,6 +969,8 @@ const products = [
       { name: "Red",   hex: "#b5342f" }
     ],
     unavailableColors: ["Red"],                 // "Red" dull/disabled dikhega, click nahi hoga
+    category: "fashion",                        // category pill/dropdown mein "Fashion" ke andar dikhega
+    featured: true,                             // Home tab pe dikhega
     images: [
       "https://i.ibb.co/4g2b3Mj7/photo-1542291026-7eec264c27ff.jpg",
       "https://i.ibb.co/WNrngmtw/photo-1548801133-da353ebb1d97.jpg",
@@ -886,6 +986,8 @@ const products = [
     sizeLabel: "Chest Size",                   // yahan "Chest Size" jaisa aapne kaha
     sizes: ["22","24","26","28"],
     unavailableSizes: ["28"],                  // "28" filhaal stock mein nahi
+    category: "jackets",
+    featured: true,
     colors: [
       { name: "Charcoal", hex: "#3a3640" },
       { name: "Camel",    hex: "#b48a5a" }
@@ -902,6 +1004,7 @@ const products = [
     price: 6200,
     description: "A 38mm stainless steel watch with sapphire-coated glass and a hand-finished sunburst dial. Understated, all-day wearable.",
     outOfStock: true,                          // poora product hi out of stock
+    category: "watches",
     // is product mein "sizes" aur "colors" jaan-bujh kar nahi likhi — watch ko inki zaroorat nahi
     images: [
       "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=900&auto=format&fit=crop",
@@ -915,6 +1018,8 @@ const products = [
     price: 3200,
     description: "100% mulberry silk scarf, hand-rolled edges, exclusive botanical print. Lightweight enough to wear three different ways.",
     // "sizes" nahi — scarf one-size hai
+    category: "fashion",
+    featured: true,
     colors: [
       { name: "Ivory",   hex: "#efe7da" },
       { name: "Emerald", hex: "#2f5d4f" },
@@ -931,6 +1036,8 @@ const products = [
     name: "Driftwood Sunglasses",
     price: 4500,
     description: "Acetate frames with polarized UV400 lenses, finished in a warm tortoise tone. Comes with a recycled-felt travel pouch.",
+    category: "glasses",
+    featured: true,
     // "sizes" / "colors" koi bhi nahi — sunglasses ko inki zaroorat nahi
     images: [
       "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=900&auto=format&fit=crop",
@@ -945,6 +1052,7 @@ const products = [
     description: "Penny loafers in buttery suede with a hand-stacked leather heel. Built on a cushioned footbed for all-day comfort.",
     sizeLabel: "Shoe Size",
     sizes: ["S","M","L","XL"],
+    category: "fashion",
     colors: [
       { name: "Tan",   hex: "#b98a55" },
       { name: "Black", hex: "#1c1c1c" }
@@ -965,6 +1073,101 @@ let carouselIndex = {}; // productId -> current image index
 // selectedSizes: { productId: "M" }   |   selectedColors: { productId: "Black" }
 let selectedSizes = {};
 let selectedColors = {};
+
+// currentView: "home" (featured products only) OR a category key like "watches"
+let currentView = "home";
+
+/* ======================================================================
+   2b. CATEGORY NAVIGATION (Home / category pills / Shop dropdown)
+   ====================================================================== */
+const shopNavWrap = document.getElementById('shopNavWrap');
+const shopNavTrigger = document.getElementById('shopNavTrigger');
+const shopDropdown = document.getElementById('shopDropdown');
+const categoryBar = document.getElementById('categoryBar');
+const shopHeading = document.getElementById('shopHeading');
+const shopEyebrow = document.getElementById('shopEyebrow');
+const shopSubtext = document.getElementById('shopSubtext');
+
+function getFilteredProducts(){
+  if(currentView === "home"){
+    return products.filter(p => p.featured);
+  }
+  return products.filter(p => p.category === currentView);
+}
+
+function getCategoryLabel(key){
+  const cat = CATEGORIES.find(c => c.key === key);
+  return cat ? cat.label : key;
+}
+
+function setView(view){
+  currentView = view;
+
+  // update heading/eyebrow/subtext to match the selected view
+  if(view === "home"){
+    shopEyebrow.textContent = "The Collection";
+    shopHeading.textContent = "Handpicked for you";
+    shopSubtext.textContent = "Every piece below is in stock and ready to ship within 24 hours of order confirmation.";
+  } else {
+    const label = getCategoryLabel(view);
+    shopEyebrow.textContent = "Category";
+    shopHeading.textContent = label;
+    shopSubtext.textContent = `Browsing all items in ${label}.`;
+  }
+
+  renderCategoryBar();
+  renderShopDropdown();
+  renderProducts();
+
+  // smooth-scroll to shop section so the filtered results are visible
+  document.getElementById('shop').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderCategoryBar(){
+  const homePill = `<button type="button" class="category-pill${currentView==='home' ? ' active':''}" data-view="home"><i data-lucide="house"></i> Home</button>`;
+  const catPills = CATEGORIES.map(c =>
+    `<button type="button" class="category-pill${currentView===c.key ? ' active':''}" data-view="${c.key}"><i data-lucide="${c.icon}"></i> ${c.label}</button>`
+  ).join('');
+  categoryBar.innerHTML = homePill + catPills;
+  lucide.createIcons();
+}
+
+function renderShopDropdown(){
+  const homeLink = `<a href="#shop" data-view="home" class="${currentView==='home' ? 'active':''}"><i data-lucide="house"></i> Home</a>`;
+  const catLinks = CATEGORIES.map(c =>
+    `<a href="#shop" data-view="${c.key}" class="${currentView===c.key ? 'active':''}"><i data-lucide="${c.icon}"></i> ${c.label}</a>`
+  ).join('');
+  shopDropdown.innerHTML = homeLink + catLinks;
+  lucide.createIcons();
+}
+
+categoryBar.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-view]');
+  if(btn) setView(btn.dataset.view);
+});
+
+shopDropdown.addEventListener('click', (e) => {
+  const link = e.target.closest('[data-view]');
+  if(link){
+    e.preventDefault();
+    setView(link.dataset.view);
+    shopNavWrap.classList.remove('open');
+  }
+});
+
+// click-to-toggle for mobile (CSS :hover already handles desktop)
+shopNavTrigger.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  shopNavWrap.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if(!shopNavWrap.contains(e.target)){
+    shopNavWrap.classList.remove('open');
+  }
+});
+
+document.getElementById('logoHomeLink').addEventListener('click', () => setView('home'));
 
 /* ======================================================================
    3. RENDER PRODUCT GRID
@@ -991,7 +1194,19 @@ function buildBadges(p){
 }
 
 function renderProducts(){
-  productGrid.innerHTML = products.map(p => {
+  const list = getFilteredProducts();
+
+  if(list.length === 0){
+    productGrid.innerHTML = `
+      <div class="empty-category" style="grid-column:1/-1;">
+        <i data-lucide="package-search"></i>
+        <p>No products in this category yet.<br>Check back soon!</p>
+      </div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  productGrid.innerHTML = list.map(p => {
     carouselIndex[p.id] = 0;
     const slides = p.images.map(src => `<img src="${src}" alt="${p.name}" draggable="false">`).join('');
     const dots = p.images.map((_, i) => `<span class="${i===0?'active':''}" data-dot="${i}"></span>`).join('');
@@ -1504,6 +1719,8 @@ modalOverlay.addEventListener('click', (e) => {
    8. INIT
    ====================================================================== */
 document.getElementById('deliveryChargeDisplay').textContent = `Rs. ${DELIVERY_CHARGE}`;
+renderCategoryBar();
+renderShopDropdown();
 renderProducts();
 renderCart();
 lucide.createIcons();
