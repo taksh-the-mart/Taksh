@@ -297,6 +297,32 @@
     background: linear-gradient(135deg, var(--gold-soft), var(--gold));
     color:#1c1610; border-color:transparent; box-shadow:0 4px 14px -4px rgba(201,168,106,.5);
   }
+  /* disabled / unavailable size — dull + unclickable, same visual language across sizes & colors */
+  .size-pill[disabled], .color-swatch[disabled]{
+    opacity:0.32; cursor:not-allowed; pointer-events:none; filter:saturate(0.4);
+  }
+  .size-pill[disabled]::after{ content:""; }
+
+  /* ----- color selector: swatch (actual color) + name label, matches theme + text combo requested ----- */
+  .color-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:2px 0 0; }
+  .color-row .size-label{ font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-2); margin-right:2px; }
+  .color-swatch{
+    display:inline-flex; align-items:center; gap:6px;
+    height:30px; padding:0 10px 0 5px;
+    border-radius: var(--r-sm); border:1px solid var(--glass-border);
+    background: var(--glass-bg); color:var(--ink-1);
+    font-size:0.72rem; font-weight:700; cursor:pointer;
+    transition: all .2s var(--ease);
+  }
+  .color-swatch .dot-sample{
+    width:18px; height:18px; border-radius:50%; flex-shrink:0;
+    border:1px solid rgba(255,255,255,0.25); box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15);
+  }
+  .color-swatch:hover{ border-color: rgba(201,168,106,.5); color:var(--ink-0); }
+  .color-swatch.active{
+    background: rgba(255,255,255,0.1); border-color: var(--gold-soft);
+    box-shadow:0 0 0 1px var(--gold-soft);
+  }
   .card-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:10px;}
   .price{ font-family:'Fraunces', serif; font-size:1.25rem; color:var(--gold-soft); font-weight:600;}
   .price small{ font-size:0.7rem; color:var(--ink-2); font-family:'Manrope'; font-weight:500; margin-left:4px;}
@@ -402,6 +428,30 @@
   .field input:focus, .field textarea:focus{ border-color:var(--gold); background:rgba(255,255,255,0.08); }
   .field textarea{ resize:vertical; min-height:64px; }
   .field input::placeholder, .field textarea::placeholder{ color: rgba(243,239,233,0.3); }
+
+  /* validation error text — hidden by default, shown via JS when invalid */
+  .field-error{
+    display:none; font-size:0.74rem; color:#e89a9a; margin-top:2px;
+  }
+  .field.has-error input{ border-color: rgba(232,154,154,.6); background: rgba(232,154,154,.06); }
+  .field.has-error .field-error{ display:block; }
+
+  /* ----- courier selection cards ----- */
+  .courier-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .courier-option{ display:block; cursor:pointer; }
+  .courier-option input{ position:absolute; opacity:0; width:0; height:0; }
+  .courier-card{
+    display:flex; align-items:center; gap:8px; padding:11px 12px;
+    border-radius: var(--r-sm); border:1px solid var(--glass-border); background: var(--glass-bg);
+    color:var(--ink-1); font-size:0.82rem; font-weight:600; transition: all .2s var(--ease);
+  }
+  .courier-card svg{ width:15px; height:15px; color:var(--ink-2); flex-shrink:0; transition: color .2s; }
+  .courier-option input:checked + .courier-card{
+    background: rgba(201,168,106,.12); border-color: var(--gold-soft); color:var(--ink-0);
+    box-shadow:0 0 0 1px var(--gold-soft);
+  }
+  .courier-option input:checked + .courier-card svg{ color:var(--gold-soft); }
+  .courier-option input:focus-visible + .courier-card{ outline:2px solid var(--gold-soft); outline-offset:2px; }
 
   .submit-row{ display:flex; gap:10px; margin-top:4px; }
   .submit-row .btn{ flex:1; justify-content:center; }
@@ -659,12 +709,37 @@
 
       <div class="field">
         <label for="custPhone">Phone / WhatsApp Number</label>
-        <input type="tel" id="custPhone" name="WhatsApp_Number" placeholder="e.g. 03001234567" required>
+        <input type="tel" id="custPhone" name="WhatsApp_Number" placeholder="03XXXXXXXXX (11 digits)"
+               inputmode="numeric" maxlength="11" pattern="[0-9]{11}" autocomplete="tel" required>
+        <span class="field-error" id="phoneError">Number must be exactly 11 digits, numbers only.</span>
       </div>
 
       <div class="field">
         <label for="custAddress">Shipping Address</label>
         <textarea id="custAddress" name="Shipping_Address" placeholder="House #, Street, Area, City" required></textarea>
+      </div>
+
+      <!-- ============== COURIER SELECTION (required before order can be placed) ============== -->
+      <div class="field">
+        <label>Preferred Courier</label>
+        <div class="courier-grid" id="courierGrid">
+          <label class="courier-option">
+            <input type="radio" name="Courier_Service" value="Post Ex" required>
+            <span class="courier-card"><i data-lucide="truck"></i> Post Ex</span>
+          </label>
+          <label class="courier-option">
+            <input type="radio" name="Courier_Service" value="TCS">
+            <span class="courier-card"><i data-lucide="truck"></i> TCS</span>
+          </label>
+          <label class="courier-option">
+            <input type="radio" name="Courier_Service" value="Leopards">
+            <span class="courier-card"><i data-lucide="truck"></i> Leopards</span>
+          </label>
+          <label class="courier-option">
+            <input type="radio" name="Courier_Service" value="Post Office">
+            <span class="courier-card"><i data-lucide="truck"></i> Post Office</span>
+          </label>
+        </div>
       </div>
 
       <div class="field">
@@ -714,26 +789,76 @@
    ====================================================================== */
 const products = [
   /* ----------------------------------------------------------------------
-     OPTIONAL FIELDS you can add to ANY product (all optional, mix & match):
+     === YEH PRODUCT KA "DATA CARD" HAI ===
+     Har { } ek product hota hai. Sirf yahan values badal kar nayi cheez
+     site pe add ho jati hai — design/code ko haath lagane ki zaroorat nahi.
 
-     badge: "new"            -> shows a "New" pill
-     outOfStock: true         -> dims the card, disables Add button, shows "Out of Stock" pill
-     stockLeft: 5              -> shows "Limited Stock — only 5 left" pill
-     dealEndsAt: "2026-06-30T23:59:59"  -> shows live countdown (Days:HH:MM:SS).
-                                           When it reaches zero, badge auto-changes to "Deal Ended"
-                                           and the product itself stays fully normal/buyable.
-     sizes: ["S","M","L","XL"]  -> shows a size-selector row under the description.
-                                    Leave this field OUT entirely for products that don't need
-                                    sizes (e.g. watch, sunglasses, scarf) and the row won't render.
+     ZAROORI FIELDS (yeh har product mein hone chahiye):
+     id            -> unique number, kisi do products ka same nahi hona chahiye
+     name          -> product ka naam
+     price         -> price number mein (Rs likhne ki zaroorat nahi)
+     description   -> chota ya bara description, dono chalega
+     images        -> [ "url1", "url2", ... ] image links ki list
+
+     OPTIONAL FIELDS (jo chahiye sirf wahi product mein likhein, baqi mein bilkul mat likhein):
+
+     badge: "new"
+        -> Card pe "New" wala pill dikhayega.
+
+     outOfStock: true
+        -> Poora product disable ho jata hai: card dhundla (dim) ho jayega,
+           "+" wala Add button click hi nahi hoga.
+
+     stockLeft: 5
+        -> "Limited Stock — only 5 left" wala pill dikhayega.
+
+     dealEndsAt: "2026-06-30T23:59:59"
+        -> Live countdown timer dikhayega (din:ghante:minute:second).
+           Waqt khatam hote hi sirf "Deal Ended" likh jayega, product khud
+           bilkul normal/khareedne layak rahega — kuch aur nahi badlega.
+
+     sizes: ["S","M","L","XL"]
+        -> Description ke neeche size choose karne ka option aayega.
+           Jis product mein "sizes" field hi nahi likhi, us pe yeh poora
+           option nazar hi nahi aayega (jaise watch, sunglasses mein).
+
+     sizeLabel: "Chest Size"
+        -> Sizes ke upar jo heading likha aata hai woh yahan se control hota
+           hai. Har product apna alag heading rakh sakta hai — jaise kisi
+           mein "Chest Size", kisi mein "Shoe Size", kisi mein "Waist Size".
+           Agar yeh field nahi likhi to default "Size" likha aayega.
+
+     unavailableSizes: ["L"]
+        -> "sizes" list mein se jo size yahan likh denge, woh halka/dull ho
+           jayega aur click nahi hoga (bilkul out-of-stock jaisa) — matlab
+           woh size filhaal available nahi hai.
+
+     colors: [ { name: "Black", hex: "#1a1a1a" }, { name: "Red", hex: "#b5342f" } ]
+        -> Description/sizes ke neeche color choose karne ka gol swatch +
+           naam dikhayega. Jis product mein "colors" field nahi likhi, us pe
+           color option bilkul nazar nahi aayega.
+
+     unavailableColors: ["Red"]
+        -> "colors" list mein se jis color ka "name" yahan likh denge, woh
+           color bhi halka/dull ho jayega aur click nahi hoga — yani woh
+           color filhaal stock mein nahi hai (bilkul sizes wale tarike jaisa).
      ---------------------------------------------------------------------- */
   {
     id: 1,
     name: "NIKE 420",
     price: 9499,
     description: "The Nike, JUST DO IT.",
-    badge: "new",                          // shows "New" pill
-    dealEndsAt: "2026-06-30T23:59:59",      // countdown badge -> auto switches to "Deal Ended"
-    sizes: ["S","M","L","XL"],             // size selector shown — this is a shoe
+    badge: "new",                              // "New" pill
+    dealEndsAt: "2026-06-30T23:59:59",          // countdown -> khud "Deal Ended" ban jayega
+    sizeLabel: "Shoe Size",                     // is product ka apna heading
+    sizes: ["S","M","L","XL"],
+    unavailableSizes: ["XL"],                   // "XL" dull/disabled dikhega, click nahi hoga
+    colors: [
+      { name: "Black", hex: "#1c1c1c" },
+      { name: "White", hex: "#f2efe9" },
+      { name: "Red",   hex: "#b5342f" }
+    ],
+    unavailableColors: ["Red"],                 // "Red" dull/disabled dikhega, click nahi hoga
     images: [
       "https://i.ibb.co/4g2b3Mj7/photo-1542291026-7eec264c27ff.jpg",
       "https://i.ibb.co/WNrngmtw/photo-1548801133-da353ebb1d97.jpg",
@@ -745,8 +870,14 @@ const products = [
     name: "Atelier Wool Overcoat",
     price: 12900,
     description: "A tailored double-breasted overcoat in heavyweight wool blend. Cut for a relaxed silhouette that layers beautifully over knitwear. Designed in-house and finished by hand, this piece is built from a heavyweight Italian wool blend that holds its shape through years of wear. The notch lapel and horn buttons give it a timeless look that pairs equally well with denim or tailored trousers.",
-    stockLeft: 4,                          // shows "Limited Stock — only 4 left"
-    sizes: ["S","M","L","XL"],             // size selector shown — this is a coat
+    stockLeft: 4,                              // "Limited Stock" pill
+    sizeLabel: "Chest Size",                   // yahan "Chest Size" jaisa aapne kaha
+    sizes: ["22","24","26","28"],
+    unavailableSizes: ["28"],                  // "28" filhaal stock mein nahi
+    colors: [
+      { name: "Charcoal", hex: "#3a3640" },
+      { name: "Camel",    hex: "#b48a5a" }
+    ],
     images: [
       "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?q=80&w=900&auto=format&fit=crop",
@@ -758,8 +889,8 @@ const products = [
     name: "Solstice Minimal Watch",
     price: 6200,
     description: "A 38mm stainless steel watch with sapphire-coated glass and a hand-finished sunburst dial. Understated, all-day wearable.",
-    outOfStock: true,                      // dims card, disables Add button, shows "Out of Stock"
-    // no "sizes" field here on purpose — watches don't need a size selector
+    outOfStock: true,                          // poora product hi out of stock
+    // is product mein "sizes" aur "colors" jaan-bujh kar nahi likhi — watch ko inki zaroorat nahi
     images: [
       "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1495856458515-0637185db551?q=80&w=900&auto=format&fit=crop",
@@ -771,7 +902,12 @@ const products = [
     name: "Cassia Silk Scarf",
     price: 3200,
     description: "100% mulberry silk scarf, hand-rolled edges, exclusive botanical print. Lightweight enough to wear three different ways.",
-    // no "sizes" field — scarf is one-size, so the row stays hidden
+    // "sizes" nahi — scarf one-size hai
+    colors: [
+      { name: "Ivory",   hex: "#efe7da" },
+      { name: "Emerald", hex: "#2f5d4f" },
+      { name: "Blush",   hex: "#d9aab0" }
+    ],
     images: [
       "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1601924921557-45e6dea0a157?q=80&w=900&auto=format&fit=crop",
@@ -783,7 +919,7 @@ const products = [
     name: "Driftwood Sunglasses",
     price: 4500,
     description: "Acetate frames with polarized UV400 lenses, finished in a warm tortoise tone. Comes with a recycled-felt travel pouch.",
-    // no "sizes" field — sunglasses don't need one either
+    // "sizes" / "colors" koi bhi nahi — sunglasses ko inki zaroorat nahi
     images: [
       "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1577803645773-f96470509666?q=80&w=900&auto=format&fit=crop",
@@ -795,7 +931,12 @@ const products = [
     name: "Harlow Suede Loafers",
     price: 7300,
     description: "Penny loafers in buttery suede with a hand-stacked leather heel. Built on a cushioned footbed for all-day comfort.",
-    sizes: ["S","M","L","XL"],             // size selector shown — this is a shoe
+    sizeLabel: "Shoe Size",
+    sizes: ["S","M","L","XL"],
+    colors: [
+      { name: "Tan",   hex: "#b98a55" },
+      { name: "Black", hex: "#1c1c1c" }
+    ],
     images: [
       "https://images.unsplash.com/photo-1614252369475-531eba835eb1?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1533867617858-e7b97e060509?q=80&w=900&auto=format&fit=crop",
@@ -809,6 +950,9 @@ const products = [
    ====================================================================== */
 let cart = []; // { id, name, price, qty, image }
 let carouselIndex = {}; // productId -> current image index
+// selectedSizes: { productId: "M" }   |   selectedColors: { productId: "Black" }
+let selectedSizes = {};
+let selectedColors = {};
 
 /* ======================================================================
    3. RENDER PRODUCT GRID
@@ -848,13 +992,42 @@ function renderProducts(){
       ? `<button class="view-more-btn" data-action="toggle-desc" data-id="${p.id}">View More</button>`
       : '';
 
-    // size selector row — only renders if this product defines a "sizes" array
-    const sizeRow = (p.sizes && p.sizes.length)
-      ? `<div class="size-row" data-size-row="${p.id}">
-           <span class="size-label">Size:</span>
-           ${p.sizes.map((s,i) => `<button type="button" class="size-pill${i===0?' active':''}" data-action="size" data-id="${p.id}" data-size="${s}">${s}</button>`).join('')}
-         </div>`
-      : '';
+    // ----- size selector row — only renders if this product defines a "sizes" array -----
+    // first AVAILABLE (non-disabled) size becomes the default active one
+    let sizeRow = '';
+    if(p.sizes && p.sizes.length){
+      const unavailSizes = p.unavailableSizes || [];
+      const firstAvailableSize = p.sizes.find(s => !unavailSizes.includes(s)) || null;
+      if(firstAvailableSize) selectedSizes[p.id] = firstAvailableSize;
+
+      sizeRow = `<div class="size-row" data-size-row="${p.id}">
+           <span class="size-label">${p.sizeLabel || 'Size'}:</span>
+           ${p.sizes.map(s => {
+             const isUnavailable = unavailSizes.includes(s);
+             const isActive = s === firstAvailableSize;
+             return `<button type="button" class="size-pill${isActive ? ' active' : ''}" data-action="size" data-id="${p.id}" data-size="${s}" ${isUnavailable ? 'disabled title="Unavailable"' : ''}>${s}</button>`;
+           }).join('')}
+         </div>`;
+    }
+
+    // ----- color selector row — only renders if this product defines a "colors" array -----
+    let colorRow = '';
+    if(p.colors && p.colors.length){
+      const unavailColors = p.unavailableColors || [];
+      const firstAvailableColor = p.colors.find(c => !unavailColors.includes(c.name)) || null;
+      if(firstAvailableColor) selectedColors[p.id] = firstAvailableColor.name;
+
+      colorRow = `<div class="color-row" data-color-row="${p.id}">
+           <span class="size-label">Color:</span>
+           ${p.colors.map(c => {
+             const isUnavailable = unavailColors.includes(c.name);
+             const isActive = firstAvailableColor && c.name === firstAvailableColor.name;
+             return `<button type="button" class="color-swatch${isActive ? ' active' : ''}" data-action="color" data-id="${p.id}" data-color="${c.name}" ${isUnavailable ? 'disabled title="Unavailable"' : ''}>
+                        <span class="dot-sample" style="background:${c.hex};"></span>${c.name}
+                      </button>`;
+           }).join('')}
+         </div>`;
+    }
 
     return `
     <article class="card glass${oosClass}" data-id="${p.id}">
@@ -872,6 +1045,7 @@ function renderProducts(){
         <p class="${descClass}" data-desc="${p.id}">${p.description}</p>
         ${viewMoreBtn}
         ${sizeRow}
+        ${colorRow}
         <div class="card-foot">
           <div class="price">Rs. ${p.price.toLocaleString()}<small>/ pc</small></div>
           <button class="add-btn" data-action="add" data-id="${p.id}" aria-label="Add ${p.name} to cart" ${p.outOfStock ? 'disabled' : ''}>
@@ -884,9 +1058,6 @@ function renderProducts(){
   lucide.createIcons();
   updateCountdowns(); // paint timers immediately, no 1s flash of placeholder
 }
-
-// tracks the currently selected size per product id, e.g. { 1: "M", 6: "L" }
-let selectedSizes = {};
 
 /* ----- live countdown timers for dealEndsAt ----- */
 function updateCountdowns(){
@@ -922,6 +1093,7 @@ productGrid.addEventListener('click', (e) => {
   const dot = e.target.closest('[data-dot]');
   const viewMoreBtn = e.target.closest('[data-action="toggle-desc"]');
   const sizeBtn = e.target.closest('[data-action="size"]');
+  const colorBtn = e.target.closest('[data-action="color"]');
 
   if(btn){
     const wrap = btn.closest('.carousel');
@@ -945,10 +1117,20 @@ productGrid.addEventListener('click', (e) => {
     viewMoreBtn.textContent = isClamped ? 'View More' : 'View Less';
   }
   if(sizeBtn){
+    // disabled (unavailable) size pills already have pointer-events:none via CSS,
+    // but we double-check here too in case of programmatic clicks
+    if(sizeBtn.disabled) return;
     const id = sizeBtn.dataset.id;
     selectedSizes[id] = sizeBtn.dataset.size;
     const row = document.querySelector(`[data-size-row="${id}"]`);
     row.querySelectorAll('.size-pill').forEach(p => p.classList.toggle('active', p === sizeBtn));
+  }
+  if(colorBtn){
+    if(colorBtn.disabled) return;
+    const id = colorBtn.dataset.id;
+    selectedColors[id] = colorBtn.dataset.color;
+    const row = document.querySelector(`[data-color-row="${id}"]`);
+    row.querySelectorAll('.color-swatch').forEach(c => c.classList.toggle('active', c === colorBtn));
   }
 });
 
@@ -1007,20 +1189,22 @@ function addToCart(id){
     return;
   }
 
-  // if this product has sizes, require a selection (defaults to first size if user never touched it)
-  const size = (product.sizes && product.sizes.length) ? (selectedSizes[id] || product.sizes[0]) : null;
+  // if this product has sizes/colors, use the user's current selection (defaults already set on render)
+  const size = (product.sizes && product.sizes.length) ? (selectedSizes[id] || null) : null;
+  const color = (product.colors && product.colors.length) ? (selectedColors[id] || null) : null;
 
-  // items with different sizes are tracked as separate cart lines (key includes size)
-  const cartKey = size ? `${id}-${size}` : `${id}`;
+  // items with different size/color combos are tracked as separate cart lines
+  const cartKey = [id, size, color].filter(Boolean).join('-');
   const existing = cart.find(item => item.cartKey === cartKey);
 
   if(existing){
     existing.qty += 1;
   } else {
-    cart.push({ cartKey, id: product.id, name: product.name, price: product.price, qty: 1, image: product.images[0], size });
+    cart.push({ cartKey, id: product.id, name: product.name, price: product.price, qty: 1, image: product.images[0], size, color });
   }
   renderCart();
-  showToast(product.name, size ? `Added to your cart · Size ${size}` : "Added to your cart");
+  const variantText = [size, color].filter(Boolean).join(' · ');
+  showToast(product.name, variantText ? `Added to your cart · ${variantText}` : "Added to your cart");
   openDrawer();
 }
 
@@ -1065,7 +1249,7 @@ function renderCart(){
       <div class="cart-item" data-key="${item.cartKey}">
         <img src="${item.image}" alt="${item.name}">
         <div class="cart-item-info">
-          <h5>${item.name}${item.size ? ` <span style="color:var(--gold-soft); font-weight:600;">· ${item.size}</span>` : ''}</h5>
+          <h5>${item.name}${[item.size, item.color].filter(Boolean).length ? ` <span style="color:var(--gold-soft); font-weight:600;">· ${[item.size, item.color].filter(Boolean).join(' · ')}</span>` : ''}</h5>
           <span class="unit">Rs. ${item.price.toLocaleString()} each</span>
           <div class="qty-row">
             <div class="qty-ctrl">
@@ -1176,6 +1360,18 @@ const orderDetailsField = document.getElementById('orderDetailsField');
 const submitOrderBtn = document.getElementById('submitOrderBtn');
 const submitBtnText = document.getElementById('submitBtnText');
 
+/* ----- Phone field: numbers-only, max 11 digits, live filtering as user types ----- */
+const custPhoneInput = document.getElementById('custPhone');
+custPhoneInput.addEventListener('input', () => {
+  // strip anything that isn't a digit, then cap at 11 digits
+  const cleaned = custPhoneInput.value.replace(/\D/g, '').slice(0, 11);
+  custPhoneInput.value = cleaned;
+  // clear the error styling as soon as the user starts correcting it
+  if(cleaned.length === 11){
+    custPhoneInput.closest('.field').classList.remove('has-error');
+  }
+});
+
 function buildOrderSummary(){
   const lines = [];
   lines.push("———————————————————");
@@ -1183,8 +1379,11 @@ function buildOrderSummary(){
   lines.push("———————————————————");
   lines.push("");
   cart.forEach((item, idx) => {
-    const sizeText = item.size ? `  (Size: ${item.size})` : '';
-    lines.push(`${idx + 1}. ${item.name}${sizeText}`);
+    const variantBits = [];
+    if(item.size) variantBits.push(`Size: ${item.size}`);
+    if(item.color) variantBits.push(`Color: ${item.color}`);
+    const variantText = variantBits.length ? `  (${variantBits.join(', ')})` : '';
+    lines.push(`${idx + 1}. ${item.name}${variantText}`);
     lines.push(`   Qty: ${item.qty}  x  Rs. ${item.price.toLocaleString()}  =  Rs. ${(item.price * item.qty).toLocaleString()}`);
     lines.push("");
   });
@@ -1196,6 +1395,10 @@ function buildOrderSummary(){
   lines.push("———————————————————");
   lines.push(`GRAND TOTAL: Rs. ${total.toLocaleString()}`);
   lines.push("———————————————————");
+
+  const courier = checkoutForm.querySelector('input[name="Courier_Service"]:checked');
+  lines.push(`Courier: ${courier ? courier.value : 'Not selected'}`);
+  lines.push("———————————————————");
   return lines.join('\n');
 }
 
@@ -1204,6 +1407,27 @@ checkoutForm.addEventListener('submit', async (e) => {
 
   if(cart.length === 0){
     showToast("Cart is empty", "Add a product before checking out", true);
+    return;
+  }
+
+  // ----- Phone validation: exactly 11 digits, numbers only -----
+  const phoneField = document.getElementById('custPhone');
+  const phoneFieldWrap = phoneField.closest('.field');
+  const digitsOnly = phoneField.value.replace(/\D/g, '');
+
+  if(digitsOnly.length !== 11){
+    phoneFieldWrap.classList.add('has-error');
+    phoneField.focus();
+    showToast("Invalid Phone Number", "Number must be exactly 11 digits", true);
+    return;
+  } else {
+    phoneFieldWrap.classList.remove('has-error');
+  }
+
+  // ----- Courier validation: one must be selected -----
+  const courierChecked = checkoutForm.querySelector('input[name="Courier_Service"]:checked');
+  if(!courierChecked){
+    showToast("Select a Courier", "Please choose a courier service to continue", true);
     return;
   }
 
