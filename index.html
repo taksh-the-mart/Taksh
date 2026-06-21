@@ -204,11 +204,41 @@
     width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.4); transition: all .25s ease;
   }
   .car-dots span.active{ background:var(--gold-soft); width:16px; border-radius:4px; }
+  .badge-stack{
+    position:absolute; top:12px; left:12px; right:12px; z-index:3;
+    display:flex; flex-wrap:wrap; gap:6px; pointer-events:none;
+  }
   .card-badge{
-    position:absolute; top:12px; left:12px; z-index:3;
     background: rgba(12,10,16,0.55); backdrop-filter: blur(6px);
     border:1px solid rgba(255,255,255,0.15);
     padding:5px 11px; border-radius:999px; font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold-soft);
+    white-space:nowrap;
+  }
+  /* badge color variants */
+  .card-badge.badge-new{ color:var(--gold-soft); border-color:rgba(201,168,106,.4); }
+  .card-badge.badge-limited{
+    color:#1c1610; background:linear-gradient(135deg,#f0c869,#d99a3f);
+    border-color:transparent; font-weight:700;
+  }
+  .card-badge.badge-oos{
+    color:#f3d2d2; background:rgba(120,30,30,0.55); border-color:rgba(255,120,120,.35); font-weight:700;
+  }
+  .card-badge.badge-timer{
+    color:#1c1610; background:linear-gradient(135deg, var(--gold-soft), var(--gold));
+    border-color:transparent; font-weight:800; font-variant-numeric:tabular-nums;
+    letter-spacing:0.02em;
+  }
+  .card-badge.badge-deal-ended{
+    color:var(--ink-2); background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.12);
+  }
+
+  /* out of stock state */
+  .card.is-oos{ filter:saturate(0.55) brightness(0.8); }
+  .card.is-oos .carousel::after{
+    content:""; position:absolute; inset:0; background:rgba(8,6,10,0.32); z-index:2;
+  }
+  .add-btn[disabled]{
+    opacity:0.4; cursor:not-allowed; pointer-events:none;
   }
 
   .card-body{ padding:20px 20px 22px; display:flex; flex-direction:column; gap:10px; flex:1; }
@@ -590,11 +620,23 @@
    1. DYNAMIC DATA STRUCTURE — products array (edit/add items freely)
    ====================================================================== */
 const products = [
+  /* ----------------------------------------------------------------------
+     OPTIONAL FIELDS you can add to ANY product (all optional, mix & match):
+
+     badge: "new"            -> shows a "New" pill
+     outOfStock: true         -> dims the card, disables Add button, shows "Out of Stock" pill
+     stockLeft: 5              -> shows "Limited Stock — only 5 left" pill
+     dealEndsAt: "2026-06-30T23:59:59"  -> shows live countdown (Days:HH:MM:SS).
+                                           When it reaches zero, badge auto-changes to "Deal Ended"
+                                           and the product itself stays fully normal/buyable.
+     ---------------------------------------------------------------------- */
   {
     id: 1,
     name: "NIKE 420",
     price: 9499,
     description: "The Nike, JUST DO IT.",
+    badge: "new",                          // shows "New" pill
+    dealEndsAt: "2026-06-30T23:59:59",      // countdown badge -> auto switches to "Deal Ended"
     images: [
       "https://i.ibb.co/4g2b3Mj7/photo-1542291026-7eec264c27ff.jpg",
       "https://i.ibb.co/WNrngmtw/photo-1548801133-da353ebb1d97.jpg",
@@ -606,6 +648,7 @@ const products = [
     name: "Atelier Wool Overcoat",
     price: 12900,
     description: "A tailored double-breasted overcoat in heavyweight wool blend. Cut for a relaxed silhouette that layers beautifully over knitwear.",
+    stockLeft: 4,                          // shows "Limited Stock — only 4 left"
     images: [
       "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?q=80&w=900&auto=format&fit=crop",
@@ -617,6 +660,7 @@ const products = [
     name: "Solstice Minimal Watch",
     price: 6200,
     description: "A 38mm stainless steel watch with sapphire-coated glass and a hand-finished sunburst dial. Understated, all-day wearable.",
+    outOfStock: true,                      // dims card, disables Add button, shows "Out of Stock"
     images: [
       "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=900&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1495856458515-0637185db551?q=80&w=900&auto=format&fit=crop",
@@ -669,15 +713,35 @@ let carouselIndex = {}; // productId -> current image index
    ====================================================================== */
 const productGrid = document.getElementById('productGrid');
 
+function buildBadges(p){
+  const badges = [];
+
+  if(p.badge === 'new'){
+    badges.push(`<span class="card-badge badge-new">New</span>`);
+  }
+  if(p.outOfStock){
+    badges.push(`<span class="card-badge badge-oos">Out of Stock</span>`);
+  }
+  if(!p.outOfStock && p.stockLeft){
+    badges.push(`<span class="card-badge badge-limited">Limited — only ${p.stockLeft} left</span>`);
+  }
+  if(p.dealEndsAt){
+    // placeholder pill; actual countdown text is filled in/updated by updateCountdowns()
+    badges.push(`<span class="card-badge badge-timer" data-countdown="${p.id}" data-deadline="${p.dealEndsAt}">--:--:--:--</span>`);
+  }
+  return badges.join('');
+}
+
 function renderProducts(){
   productGrid.innerHTML = products.map(p => {
     carouselIndex[p.id] = 0;
     const slides = p.images.map(src => `<img src="${src}" alt="${p.name}" draggable="false">`).join('');
     const dots = p.images.map((_, i) => `<span class="${i===0?'active':''}" data-dot="${i}"></span>`).join('');
+    const oosClass = p.outOfStock ? ' is-oos' : '';
     return `
-    <article class="card glass" data-id="${p.id}">
+    <article class="card glass${oosClass}" data-id="${p.id}">
       <div class="carousel" data-carousel="${p.id}">
-        <span class="card-badge">New</span>
+        <div class="badge-stack">${buildBadges(p)}</div>
         ${p.images.length > 1 ? `
         <button class="car-btn prev" data-action="prev" aria-label="Previous image"><i data-lucide="chevron-left"></i></button>
         <button class="car-btn next" data-action="next" aria-label="Next image"><i data-lucide="chevron-right"></i></button>
@@ -690,7 +754,7 @@ function renderProducts(){
         <p class="desc">${p.description}</p>
         <div class="card-foot">
           <div class="price">Rs. ${p.price.toLocaleString()}<small>/ pc</small></div>
-          <button class="add-btn" data-action="add" data-id="${p.id}" aria-label="Add ${p.name} to cart">
+          <button class="add-btn" data-action="add" data-id="${p.id}" aria-label="Add ${p.name} to cart" ${p.outOfStock ? 'disabled' : ''}>
             <i data-lucide="plus"></i>
           </button>
         </div>
@@ -698,7 +762,35 @@ function renderProducts(){
     </article>`;
   }).join('');
   lucide.createIcons();
+  updateCountdowns(); // paint timers immediately, no 1s flash of placeholder
 }
+
+/* ----- live countdown timers for dealEndsAt ----- */
+function updateCountdowns(){
+  document.querySelectorAll('[data-countdown]').forEach(el => {
+    const deadline = new Date(el.dataset.deadline).getTime();
+    const now = Date.now();
+    const diff = deadline - now;
+
+    if(isNaN(deadline) || diff <= 0){
+      el.textContent = 'Deal Ended';
+      el.classList.remove('badge-timer');
+      el.classList.add('badge-deal-ended');
+      return;
+    }
+
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    const pad = n => String(n).padStart(2,'0');
+    el.textContent = d > 0
+      ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}`
+      : `${pad(h)}:${pad(m)}:${pad(s)}`;
+  });
+}
+setInterval(updateCountdowns, 1000);
 
 /* ----- carousel interactions (click + touch swipe) ----- */
 productGrid.addEventListener('click', (e) => {
@@ -771,6 +863,10 @@ const checkoutForm = document.getElementById('checkoutForm');
 
 function addToCart(id){
   const product = products.find(p => p.id === id);
+  if(product.outOfStock){
+    showToast("Out of Stock", `${product.name} is currently unavailable`, true);
+    return;
+  }
   const existing = cart.find(item => item.id === id);
   if(existing){
     existing.qty += 1;
